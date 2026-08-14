@@ -28,6 +28,8 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { DataDeletionPage } from './components/DataDeletionPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { ShareTargetView } from './components/ShareTargetView';
+import { UrlIntakePreviewCard } from './components/UrlIntakePreviewCard';
+import { ImageAiEditModal } from './components/ImageAiEditModal';
 import {
   LayoutDashboard,
   PlusCircle,
@@ -44,6 +46,8 @@ import {
   Trash2,
   Edit,
   Sparkles,
+  Wand2,
+  ImageIcon,
   Send,
   ExternalLink,
   AlertCircle,
@@ -116,6 +120,10 @@ export default function App() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
+  // Global Image AI Edit Modal State
+  const [editingImagePost, setEditingImagePost] = useState<Post | null>(null);
+  const [activeEditImageUrl, setActiveEditImageUrl] = useState<string | null>(null);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -140,19 +148,50 @@ export default function App() {
     loadData();
   }, []);
 
+  const handleAddWorkflowPost = async (data: {
+    sourceUrl: string;
+    originalText: string;
+    sourceName: string;
+    category: any;
+    notes?: string;
+    imageUrl?: string;
+  }) => {
+    try {
+      setAddingPost(true);
+      setAddError(null);
+      setAddSuccess(null);
+      const res = await createPost({
+        sourceUrl: data.sourceUrl,
+        originalText: data.originalText,
+        sourceName: data.sourceName,
+        category: data.category,
+        notes: data.notes,
+        imageUrl: data.imageUrl,
+        triggerType: data.sourceUrl ? 'URL' : 'MANUAL',
+      });
+      setAddSuccess(res.message || 'Source post submitted to queue with extracted text & media!');
+      await loadData();
+    } catch (err: any) {
+      setAddError(err.message || 'Failed to add source post');
+    } finally {
+      setAddingPost(false);
+    }
+  };
+
   const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOriginalText.trim()) return;
+    if (!newOriginalText.trim() && !newSourceUrl.trim()) return;
     try {
       setAddingPost(true);
       setAddError(null);
       setAddSuccess(null);
       const res = await createPost({
         sourceUrl: newSourceUrl,
-        originalText: newOriginalText,
+        originalText: newOriginalText || newSourceUrl,
         sourceName: newSourceName || 'Manual Submission',
         category: newCategory,
         notes: newNotes,
+        triggerType: newSourceUrl && newSourceUrl.trim() ? 'URL' : 'MANUAL',
       });
       setAddSuccess(res.message || 'Source post submitted to queue!');
       setNewSourceUrl('');
@@ -164,6 +203,25 @@ export default function App() {
       setAddError(err.message || 'Failed to add source post');
     } finally {
       setAddingPost(false);
+    }
+  };
+
+  const handleOpenImageEdit = (post: Post) => {
+    if (!post.imageUrl) return;
+    setEditingImagePost(post);
+    setActiveEditImageUrl(post.imageUrl);
+  };
+
+  const handleApplyImageEdit = async (chosenImageUrl: string) => {
+    if (!editingImagePost) return;
+    try {
+      await updatePost(editingImagePost.id, { imageUrl: chosenImageUrl });
+      await loadData();
+    } catch (err: any) {
+      alert(`Failed to update post image: ${err.message}`);
+    } finally {
+      setEditingImagePost(null);
+      setActiveEditImageUrl(null);
     }
   };
 
@@ -370,111 +428,98 @@ export default function App() {
 
           {/* ADD SOURCE POST TAB */}
           {activeTab === 'add-post' && (
-            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-white">Add Source Post</h2>
-                <p className="text-xs text-zinc-300 mt-1">
-                  Ingest content manually or via URL. Submitted posts enter the central pipeline and queue for AI processing.
-                </p>
+            <div className="space-y-6">
+              {/* Primary Post URL & AI Image Workflow Card */}
+              <UrlIntakePreviewCard
+                onAddPost={handleAddWorkflowPost}
+                isSubmitting={addingPost}
+                successMessage={addSuccess}
+                errorMessage={addError}
+              />
+
+              {/* Direct Manual Entry Option */}
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-indigo-400" />
+                      <span>Direct Manual Text Entry</span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Or type or paste text manually if you do not have a live URL to scrape.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddPost} className="space-y-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                      Post Content / Story
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={newOriginalText}
+                      onChange={(e) => setNewOriginalText(e.target.value)}
+                      placeholder="Type or paste custom text directly here..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                        Source Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newSourceName}
+                        onChange={(e) => setNewSourceName(e.target.value)}
+                        placeholder="e.g. Manual Note, Editorial"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
+                      >
+                        <option value="News">News</option>
+                        <option value="Fact">Fact</option>
+                        <option value="Funny">Funny</option>
+                        <option value="Opinion">Opinion</option>
+                        <option value="General">General</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                        Optional Notes
+                      </label>
+                      <input
+                        type="text"
+                        value={newNotes}
+                        onChange={(e) => setNewNotes(e.target.value)}
+                        placeholder="e.g. Target audience"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={addingPost || !newOriginalText.trim()}
+                    className="px-5 py-2.5 bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer border border-white/10"
+                  >
+                    {addingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                    <span>Add Manual Post</span>
+                  </button>
+                </form>
               </div>
-
-              {addSuccess && (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{addSuccess}</span>
-                </div>
-              )}
-              {addError && (
-                <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{addError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleAddPost} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                    Source Text / Article Content <span className="text-indigo-400">*</span>
-                  </label>
-                  <textarea
-                    rows={5}
-                    value={newOriginalText}
-                    onChange={(e) => setNewOriginalText(e.target.value)}
-                    placeholder="Paste original source text, article snippet, or story here..."
-                    required
-                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                      Source Name / Channel
-                    </label>
-                    <input
-                      type="text"
-                      value={newSourceName}
-                      onChange={(e) => setNewSourceName(e.target.value)}
-                      placeholder="e.g. TechCrunch, BBC, Public Feed"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                      Source URL (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={newSourceUrl}
-                      onChange={(e) => setNewSourceUrl(e.target.value)}
-                      placeholder="https://example.com/article"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
-                    >
-                      <option value="News">News</option>
-                      <option value="Fact">Fact</option>
-                      <option value="Funny">Funny</option>
-                      <option value="Opinion">Opinion</option>
-                      <option value="General">General</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                      Notes / Context
-                    </label>
-                    <input
-                      type="text"
-                      value={newNotes}
-                      onChange={(e) => setNewNotes(e.target.value)}
-                      placeholder="e.g. Target audience, internal note"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={addingPost || !newOriginalText.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20"
-                >
-                  {addingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-                  <span>Add to Content Queue</span>
-                </button>
-              </form>
             </div>
           )}
 
@@ -485,7 +530,7 @@ export default function App() {
                 <div>
                   <h2 className="text-lg font-semibold text-white">Content Queue</h2>
                   <p className="text-xs text-zinc-300 mt-1">
-                    Manage ingested source posts, trigger AI analysis/rewrites, and track status.
+                    Manage ingested source posts, trigger AI analysis/rewrites, and edit media.
                   </p>
                 </div>
                 <span className="text-xs px-3 py-1 bg-white/5 border border-white/10 rounded-full font-mono text-zinc-300">
@@ -525,6 +570,30 @@ export default function App() {
                         </span>
                       </div>
 
+                      {post.imageUrl && (
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 group max-h-56">
+                          <img
+                            src={post.imageUrl}
+                            alt="Post Media"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute bottom-2 right-2 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenImageEdit(post)}
+                              className="px-2.5 py-1.5 bg-black/70 hover:bg-indigo-600 border border-white/20 text-white rounded-lg text-[11px] font-medium backdrop-blur-sm transition-all flex items-center gap-1.5 cursor-pointer shadow-lg"
+                            >
+                              <Wand2 className="w-3 h-3 text-indigo-300" />
+                              <span>AI Edit Image</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <p className="text-xs text-zinc-200 line-clamp-3 leading-relaxed">{post.originalText}</p>
                         {post.aiRewrite && (
@@ -552,6 +621,16 @@ export default function App() {
                             {processingId === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                             <span>Process with OpenRouter</span>
                           </button>
+
+                          {post.imageUrl && (
+                            <button
+                              onClick={() => handleOpenImageEdit(post)}
+                              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Wand2 className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>AI Edit Image</span>
+                            </button>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -577,7 +656,7 @@ export default function App() {
               <div>
                 <h2 className="text-lg font-semibold text-white">Post Review & Approval</h2>
                 <p className="text-xs text-zinc-300 mt-1">
-                  Posts cannot be published to Facebook unless approved. Review generated content below.
+                  Posts cannot be published to Facebook unless approved. Review generated content and media below.
                 </p>
               </div>
 
@@ -599,6 +678,30 @@ export default function App() {
                           </span>
                         </div>
 
+                        {post.imageUrl && (
+                          <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 group max-h-56">
+                            <img
+                              src={post.imageUrl}
+                              alt="Post Media"
+                              referrerPolicy="no-referrer"
+                              className="w-full h-44 object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute bottom-2 right-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenImageEdit(post)}
+                                className="px-2.5 py-1.5 bg-black/70 hover:bg-indigo-600 border border-white/20 text-white rounded-lg text-[11px] font-medium backdrop-blur-sm transition-all flex items-center gap-1.5 cursor-pointer shadow-lg"
+                              >
+                                <Wand2 className="w-3 h-3 text-indigo-300" />
+                                <span>AI Edit Image</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="space-y-2 text-xs">
                           <div className="p-3 bg-white/5 rounded-xl">
                             <span className="text-[11px] text-zinc-400 font-medium block mb-1">Original Text:</span>
@@ -613,19 +716,31 @@ export default function App() {
                           )}
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 pt-2">
-                          <button
-                            onClick={() => handleReject(post)}
-                            className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                          >
-                            Reject
-                          </button>
-                          <button
-                            onClick={() => handleApprove(post)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-emerald-600/20 cursor-pointer"
-                          >
-                            Approve Post
-                          </button>
+                        <div className="flex items-center justify-between pt-2">
+                          {post.imageUrl ? (
+                            <button
+                              onClick={() => handleOpenImageEdit(post)}
+                              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Wand2 className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>AI Edit Image</span>
+                            </button>
+                          ) : <div />}
+
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleReject(post)}
+                              className="px-4 py-2 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => handleApprove(post)}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-emerald-600/20 cursor-pointer"
+                            >
+                              Approve Post
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -667,6 +782,20 @@ export default function App() {
                             {post.status === 'Published' ? 'Published' : 'Approved (Ready to Publish)'}
                           </span>
                         </div>
+
+                        {post.imageUrl && (
+                          <div className="rounded-xl overflow-hidden border border-white/10 max-h-48 bg-black/40">
+                            <img
+                              src={post.imageUrl}
+                              alt="Post Media"
+                              referrerPolicy="no-referrer"
+                              className="w-full h-40 object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
 
                         <p className="text-xs text-zinc-200">{post.aiRewrite || post.originalText}</p>
 
@@ -878,6 +1007,19 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Global Image AI Edit Modal */}
+      {editingImagePost && activeEditImageUrl && (
+        <ImageAiEditModal
+          isOpen={!!editingImagePost}
+          onClose={() => {
+            setEditingImagePost(null);
+            setActiveEditImageUrl(null);
+          }}
+          imageUrl={activeEditImageUrl}
+          onApplyImage={handleApplyImageEdit}
+        />
+      )}
     </div>
   );
 }

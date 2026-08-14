@@ -116,7 +116,7 @@ ${params.originalText}`;
     try {
       const ai = new GoogleGenAI({ apiKey: geminiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.7-flash',
         contents: userPrompt,
         config: {
           systemInstruction: systemPrompt,

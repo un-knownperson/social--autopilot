@@ -27,12 +27,14 @@ import {
 } from './server/facebookService.js';
 import { publishToFacebookPage } from './server/facebookPublisher.js';
 import { TriggerManager, StoreContext, TriggerPayload } from './server/triggers/index.js';
+import { extractUrlMetadataAndImage } from './server/urlExtractor.js';
+import { editImageWithAI, isGeminiImageEditingConfigured } from './server/imageEditService.js';
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Express middleware to normalize Netlify function path redirects
 app.use((req, _res, next) => {
@@ -179,9 +181,101 @@ app.get('/api/source-posts', (_req, res) => {
   res.json({ sourcePosts: store.sourcePosts || [] });
 });
 
+// GET /api/ai/image-status - Status of AI image editing provider
+app.get('/api/ai/image-status', (_req, res) => {
+  const configured = isGeminiImageEditingConfigured();
+  res.json({
+    available: configured,
+    provider: 'Google AI Studio / Gemini',
+    model: 'gemini-3.1-flash-image',
+    note: configured
+      ? 'AI Image Editing is available and powered by Google GenAI. Uses your project GEMINI_API_KEY subject to Google AI Studio quotas.'
+      : 'GEMINI_API_KEY is not configured in server environment. Set GEMINI_API_KEY in the deployment Settings menu to enable AI Image Editing.',
+  });
+});
+
+// POST /api/extract-url - Extract text and image from URL before submitting post
+app.post('/api/extract-url', async (req, res) => {
+  const { url } = req.body;
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return res.status(400).json({ error: 'A valid URL is required for metadata and image extraction.' });
+  }
+
+  try {
+    const info = await extractUrlMetadataAndImage(url.trim());
+    return res.json({
+      success: true,
+      url: url.trim(),
+      title: info.title || '',
+      description: info.description || '',
+      text: [info.title, info.description].filter(Boolean).join('\n\n'),
+      imageUrl: info.imageUrl,
+      sourceName: info.sourceName || '',
+      isDirectImage: Boolean(info.isDirectImage),
+    });
+  } catch (err: any) {
+    console.warn(`[API /api/extract-url] Extraction warning for ${url}:`, err);
+    return res.json({
+      success: false,
+      url: url.trim(),
+      text: '',
+      imageUrl: undefined,
+      error: err.message || 'Could not extract metadata from URL.',
+    });
+  }
+});
+
+// POST /api/ai/edit-image - Edit an image using AI
+app.post('/api/ai/edit-image', async (req, res) => {
+  const { imageUrl, prompt, aspectRatio, postId } = req.body;
+
+  if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
+    return res.status(400).json({ error: 'An image URL or image data is required for AI editing.' });
+  }
+
+  if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).json({ error: 'An editing instruction or prompt is required.' });
+  }
+
+  const result = await editImageWithAI({
+    imageUrl: imageUrl.trim(),
+    prompt: prompt.trim(),
+    aspectRatio: aspectRatio || '1:1',
+  });
+
+  if (!result.success) {
+    return res.status(result.error?.includes('not configured') ? 400 : 502).json({
+      error: result.error || 'Failed to edit image with AI.',
+      details: result.details,
+      originalImageUrl: imageUrl,
+      prompt,
+    });
+  }
+
+  // If a postId was passed and post exists, optionally update post.imageUrl
+  if (postId && result.editedImageUrl) {
+    const found = findPostById(postId);
+    if (found) {
+      found.post.imageUrl = result.editedImageUrl;
+      found.post.updatedAt = new Date().toISOString();
+      saveStore();
+      logActivity('post_edited', `Updated image with AI edit for post "${found.post.headline || found.post.id}"`, found.post.id);
+    }
+  }
+
+  return res.json({
+    success: true,
+    editedImageUrl: result.editedImageUrl,
+    originalImageUrl: result.originalImageUrl,
+    prompt: result.prompt,
+    provider: result.provider,
+    model: result.model,
+  });
+});
+
 // POST add post
 app.post('/api/posts', async (req, res) => {
-  const { sourceUrl, originalText, sourceName, category, notes, triggerType } = req.body;
+  const { sourceUrl, originalText, sourceName, category, notes, triggerType, imageUrl } = req.body;
 
   const payload: TriggerPayload = {
     sourceUrl,
@@ -189,18 +283,13 @@ app.post('/api/posts', async (req, res) => {
     sourceName,
     category,
     notes,
+    imageUrl: imageUrl ? imageUrl.trim() : undefined,
     triggerType: triggerType || (sourceUrl && sourceUrl.trim() ? 'URL' : 'MANUAL'),
   };
 
   const result = await triggerManager.processTrigger(payload);
 
   if (!result.success) {
-    if (result.message?.includes('Duplicate') && result.post) {
-      return res.status(409).json({
-        error: 'This source post has already been added.',
-        existingPost: result.post,
-      });
-    }
     return res.status(400).json({
       error: result.error || result.message || 'Failed to add source post.',
     });
@@ -234,11 +323,15 @@ app.patch('/api/posts/:id', (req, res) => {
     emojis,
     summary,
     keyFacts,
+    imageUrl,
   } = req.body;
 
   let description = `Updated post details for "${current.headline || current.id}"`;
   let isContentEdited = false;
 
+  if (imageUrl !== undefined) {
+    current.imageUrl = imageUrl ? imageUrl.trim() : undefined;
+  }
   if (headline !== undefined && headline !== current.headline) {
     current.headline = headline;
     isContentEdited = true;

@@ -103,10 +103,9 @@ export const ShareTargetView: React.FC<ShareTargetViewProps> = ({
     return parseIncomingShare(params);
   });
 
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'duplicate' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdPost, setCreatedPost] = useState<Post | null>(null);
-  const [existingPost, setExistingPost] = useState<Post | null>(null);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuccessMsg, setAiSuccessMsg] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -146,18 +145,13 @@ export const ShareTargetView: React.FC<ShareTargetViewProps> = ({
         await onRefreshData();
       }
     } catch (err: any) {
-      if (err instanceof DuplicatePostError && err.existingPost) {
-        setExistingPost(err.existingPost);
-        setStatus('duplicate');
-      } else {
-        setErrorMessage(err.message || 'Failed to ingest shared content');
-        setStatus('error');
-      }
+      setErrorMessage(err.message || 'Failed to ingest shared content');
+      setStatus('error');
     }
   };
 
   const handleProcessWithAI = async () => {
-    const postToProcess = createdPost || existingPost;
+    const postToProcess = createdPost;
     if (!postToProcess) return;
 
     try {
@@ -246,26 +240,6 @@ export const ShareTargetView: React.FC<ShareTargetViewProps> = ({
                   ✨ {aiSuccessMsg}
                 </p>
               )}
-            </div>
-          </div>
-        )}
-
-        {status === 'duplicate' && existingPost && (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-amber-300">Duplicate Source URL Detected</p>
-              <p className="text-[11px] text-zinc-300 mt-1">
-                This URL is already present in your Content Queue (<span className="font-mono text-white">{existingPost.id}</span>). Current status: <span className="font-semibold text-white">{existingPost.status}</span>.
-              </p>
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  onClick={() => onNavigateTab('queue')}
-                  className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 rounded-lg text-xs font-medium cursor-pointer transition-all"
-                >
-                  View in Content Queue
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -396,7 +370,7 @@ export const ShareTargetView: React.FC<ShareTargetViewProps> = ({
               </button>
             )}
 
-            {(status === 'success' || status === 'duplicate') && (
+            {status === 'success' && (
               <>
                 <button
                   onClick={() => onNavigateTab('queue')}
@@ -406,7 +380,7 @@ export const ShareTargetView: React.FC<ShareTargetViewProps> = ({
                   <span>Go to Content Queue</span>
                 </button>
 
-                {(createdPost || existingPost) && (
+                {createdPost && (
                   <button
                     onClick={handleProcessWithAI}
                     disabled={aiProcessing}

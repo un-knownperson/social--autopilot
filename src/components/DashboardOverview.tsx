@@ -284,7 +284,20 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   </span>
                 </div>
 
-                <div className="p-4 bg-white/[0.03] border border-white/10 rounded-xl backdrop-blur-md">
+                <div className="p-4 bg-white/[0.03] border border-white/10 rounded-xl backdrop-blur-md space-y-3">
+                  {lastProcessedPost.imageUrl && (
+                    <div className="rounded-lg overflow-hidden border border-white/10 max-h-40 bg-black/40">
+                      <img
+                        src={lastProcessedPost.imageUrl}
+                        alt="Source Preview"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-36 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <p className="text-sm text-zinc-200 line-clamp-3 leading-relaxed">
                     "{lastProcessedPost.originalText}"
                   </p>

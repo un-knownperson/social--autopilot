@@ -1,6 +1,7 @@
 import { SourcePost, Post, PostCategory, TriggerType, TriggerActivityLog } from '../../src/types.js';
 import { TriggerPayload, TriggerResult } from './types.js';
 import { callOpenRouterAI, isOpenRouterConfigured } from '../openrouterService.js';
+import { extractUrlMetadataAndImage } from '../urlExtractor.js';
 
 export interface StoreContext {
   getPosts(): Post[];
@@ -27,13 +28,13 @@ export class ContentProcessor {
 
   public async processIntake(payload: TriggerPayload, triggerType: TriggerType): Promise<TriggerResult> {
     const rawUrl = (payload.sourceUrl || '').trim();
-    const rawText = (payload.sourceText || '').trim();
+    let rawText = (payload.sourceText || '').trim();
     let rawName = (payload.sourceName || '').trim();
     const sourceType = payload.sourceType || 'Public Source';
     const categoryHint = payload.category || this.store.getDefaultCategory();
     const notes = (payload.notes || '').trim();
 
-    // 1. Validation
+    // 1. Validation: ensure at least URL or Text is present
     if (!rawUrl && !rawText) {
       this.logTriggerEvent(triggerType, rawName || 'Unknown Source', 'Failed', 'Missing both URL and source text.');
       return {
@@ -44,6 +45,8 @@ export class ContentProcessor {
       };
     }
 
+    let extractedImageUrl: string | undefined = payload.imageUrl ? payload.imageUrl.trim() : undefined;
+
     if (rawUrl) {
       try {
         const parsedUrl = new URL(rawUrl);
@@ -51,7 +54,29 @@ export class ContentProcessor {
           throw new Error('Invalid URL protocol. Must start with http:// or https://');
         }
         if (!rawName) {
-          rawName = parsedUrl.hostname.replace('www.', '');
+          rawName = parsedUrl.hostname.replace(/^www\./i, '');
+        }
+
+        // Attempt fault-tolerant URL metadata and image extraction
+        try {
+          const urlInfo = await extractUrlMetadataAndImage(rawUrl);
+          if (urlInfo.imageUrl && !extractedImageUrl) {
+            extractedImageUrl = urlInfo.imageUrl;
+          }
+          if (urlInfo.sourceName && !payload.sourceName) {
+            rawName = urlInfo.sourceName;
+          }
+          // If text was empty or placeholder, enrich with extracted title and description
+          if (!rawText || rawText === rawUrl) {
+            const parts: string[] = [];
+            if (urlInfo.title) parts.push(urlInfo.title);
+            if (urlInfo.description) parts.push(urlInfo.description);
+            if (parts.length > 0) {
+              rawText = parts.join('\n\n');
+            }
+          }
+        } catch (extractErr) {
+          console.warn(`[ContentProcessor] Metadata/image extraction skipped for ${rawUrl}:`, extractErr);
         }
       } catch (err: any) {
         this.logTriggerEvent(triggerType, rawUrl, 'Failed', `Invalid URL format: ${err.message}`);
@@ -68,25 +93,7 @@ export class ContentProcessor {
       rawName = `Manual Intake (${triggerType})`;
     }
 
-    // 2. Duplicate Check
-    if (rawUrl) {
-      const existing = this.store.getPosts().find(
-        (p) => p.sourceUrl && p.sourceUrl.trim().toLowerCase() === rawUrl.toLowerCase()
-      );
-      if (existing) {
-        this.logTriggerEvent(triggerType, rawName, 'Ignored', `Duplicate URL rejected: ${rawUrl}`);
-        return {
-          success: false,
-          message: 'Duplicate detected: This source URL has already been ingested into the queue.',
-          triggerType,
-          post: existing,
-          error: 'Duplicate source URL.',
-          details: `Source URL already exists in post ID: ${existing.id}`,
-        };
-      }
-    }
-
-    // 3. Create SourcePost Record
+    // 2. Create SourcePost Record (Each addition is independent - no duplicate blocks)
     const sourcePostId = `srcpost-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     const nowIso = new Date().toISOString();
 
@@ -106,7 +113,7 @@ export class ContentProcessor {
     this.store.addSourcePost(sourcePostRecord);
     this.logTriggerEvent(triggerType, rawName, 'Received', `Ingested source payload via ${triggerType}`);
 
-    // 4. Create initial Post in Content Queue
+    // 3. Create initial Post in Content Queue (Independent record)
     const postId = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     const newPost: Post = {
       id: postId,
@@ -115,6 +122,7 @@ export class ContentProcessor {
       sourceName: sourcePostRecord.sourceName,
       category: categoryHint,
       notes,
+      imageUrl: extractedImageUrl,
       status: 'Processing',
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -124,7 +132,7 @@ export class ContentProcessor {
     this.store.logActivity('post_added', `New source post ingested via ${triggerType} (${rawName})`, newPost.id);
     this.store.save();
 
-    // 5. Run OpenRouter AI Pipeline if API Key is configured
+    // 4. Run OpenRouter AI Pipeline if API Key is configured
     if (!isOpenRouterConfigured()) {
       newPost.status = 'New';
       newPost.error = 'OpenRouter API key is not configured. Post added to queue for manual AI trigger.';

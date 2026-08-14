@@ -59,12 +59,6 @@ app.post(['/api/posts', '/.netlify/functions/posts'], async (req, res) => {
   const result = await triggerManager.processTrigger(payload);
 
   if (!result.success) {
-    if (result.message?.includes('Duplicate') && result.post) {
-      return res.status(409).json({
-        error: 'This source post has already been added.',
-        existingPost: result.post,
-      });
-    }
     return res.status(400).json({
       error: result.error || result.message || 'Failed to add source post.',
     });
@@ -98,11 +92,15 @@ app.patch(['/api/posts/:id', '/.netlify/functions/posts/:id'], (req, res) => {
     emojis,
     summary,
     keyFacts,
+    imageUrl,
   } = req.body || {};
 
   let description = `Updated post details for "${current.headline || current.id}"`;
   let isContentEdited = false;
 
+  if (imageUrl !== undefined) {
+    current.imageUrl = imageUrl ? imageUrl.trim() : undefined;
+  }
   if (headline !== undefined && headline !== current.headline) {
     current.headline = headline;
     isContentEdited = true;

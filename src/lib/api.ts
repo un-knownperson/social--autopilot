@@ -46,6 +46,8 @@ export async function createPost(data: {
   sourceName?: string;
   category?: string;
   notes?: string;
+  imageUrl?: string;
+  triggerType?: string;
 }): Promise<{ message: string; post: Post }> {
   const res = await fetch('/api/posts', {
     method: 'POST',
@@ -54,11 +56,73 @@ export async function createPost(data: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    if (res.status === 409 && err.existingPost) {
-      throw new DuplicatePostError(err.error || 'This source post has already been added.', err.existingPost);
-    }
     throw new Error(err.error || 'Failed to process post');
   }
+  return res.json();
+}
+
+export interface ExtractedUrlPreview {
+  success: boolean;
+  url: string;
+  title?: string;
+  description?: string;
+  text?: string;
+  imageUrl?: string;
+  sourceName?: string;
+  isDirectImage?: boolean;
+  error?: string;
+}
+
+export async function extractUrlPreview(url: string): Promise<ExtractedUrlPreview> {
+  const res = await fetch('/api/extract-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to extract content from URL');
+  }
+  return data;
+}
+
+export interface ImageAiEditResult {
+  success: boolean;
+  editedImageUrl?: string;
+  originalImageUrl: string;
+  prompt: string;
+  error?: string;
+  details?: string;
+  provider?: string;
+  model?: string;
+}
+
+export async function editImageWithAI(params: {
+  imageUrl: string;
+  prompt: string;
+  aspectRatio?: '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+  postId?: string;
+}): Promise<ImageAiEditResult> {
+  const res = await fetch('/api/ai/edit-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || data.details || 'Failed to edit image with AI');
+  }
+  return data;
+}
+
+export async function fetchImageAIStatus(): Promise<{
+  available: boolean;
+  provider: string;
+  model: string;
+  note: string;
+}> {
+  const res = await fetch('/api/ai/image-status');
+  if (!res.ok) throw new Error('Failed to fetch AI image editing status');
   return res.json();
 }
 
@@ -271,9 +335,6 @@ export async function postSourceIntake(data: Partial<TriggerPayload>): Promise<{
 
   const resData = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 409 && resData.post) {
-      throw new DuplicatePostError(resData.message || 'This source post has already been added.', resData.post);
-    }
     throw new Error(resData.error || resData.message || 'Failed to process source intake');
   }
 

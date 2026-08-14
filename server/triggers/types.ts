@@ -8,6 +8,7 @@ export interface TriggerPayload {
   triggerType?: TriggerType;
   category?: PostCategory;
   notes?: string;
+  imageUrl?: string;
   webhookSecret?: string;
 }
 
