@@ -1,0 +1,92 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Individual API Endpoint Redirects
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/status"
+  to = "/.netlify/functions/status"
+  status = 200
+
+[[redirects]]
+  from = "/api/env-status"
+  to = "/.netlify/functions/env-status"
+  status = 200
+
+[[redirects]]
+  from = "/api/settings"
+  to = "/.netlify/functions/settings"
+  status = 200
+
+[[redirects]]
+  from = "/api/automation-rules"
+  to = "/.netlify/functions/settings"
+  status = 200
+
+# Triggers & Intake Endpoints
+[[redirects]]
+  from = "/api/source/intake"
+  to = "/.netlify/functions/triggers"
+  status = 200
+
+[[redirects]]
+  from = "/api/triggers/*"
+  to = "/.netlify/functions/triggers"
+  status = 200
+
+[[redirects]]
+  from = "/api/source-posts"
+  to = "/.netlify/functions/triggers"
+  status = 200
+
+# Source Settings & Configuration
+[[redirects]]
+  from = "/api/source*"
+  to = "/.netlify/functions/settings"
+  status = 200
+
+# Facebook Integration & OAuth Endpoints
+[[redirects]]
+  from = "/api/facebook/*"
+  to = "/.netlify/functions/facebook"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/facebook/*"
+  to = "/.netlify/functions/facebook"
+  status = 200
+
+# AI Processing Endpoint
+[[redirects]]
+  from = "/api/posts/:id/process"
+  to = "/.netlify/functions/posts/:id/process"
+  status = 200
+
+# Posts Queue
+[[redirects]]
+  from = "/api/posts/*"
+  to = "/.netlify/functions/posts/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/posts"
+  to = "/.netlify/functions/posts"
+  status = 200
+
+# General API Redirect
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Client-side SPA routing fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

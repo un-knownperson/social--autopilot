@@ -1,0 +1,618 @@
+{
+  "posts": [
+    {
+      "id": "post-1786684973820-wtbe",
+      "sourceUrl": "https://techcrunch.com/quantum-computing-milestone",
+      "originalText": "Physicists announce revolutionary silicon photonic quantum computer processor capable of fault-tolerant error correction.",
+      "sourceName": "TechCrunch Science",
+      "category": "Fact",
+      "notes": "Quantum leap verification test",
+      "status": "Approved",
+      "createdAt": "2026-08-14T05:22:53.819Z",
+      "updatedAt": "2026-08-14T05:23:08.369Z",
+      "aiRewrite": "Suno dosto! 🚀 Physicists ne andaza hone wali qadam uda diya... Silicon photonic quantum computer processor ke sath fault-tolerant error correction achieve kar diya! 🎉 Photein (photons) ka istemal kar ke, yeh system electron-based sab se alag hai aur error correction kaafi strong lag raha hai. Agla kadam? Scalable aur reliable quantum computing ka safar shuru hone wala hai! 🤯 #QuantumLeap",
+      "headline": "Physicists Unveil Silicon Photonic Quantum Chip with 'Magic' Error Correction!",
+      "hashtags": [
+        "#QuantumComputing",
+        "#TechBreakthrough",
+        "#ScienceNews",
+        "#SiliconPhotonic"
+      ],
+      "summary": "Physicists have developed a silicon photonic quantum computer processor with fault-tolerant error correction, marking a major leap in quantum technology.",
+      "keyFacts": [
+        "Silicon photonic technology enables quantum processing using photons instead of electrons",
+        "Fault-tolerant error correction achieved for the first time in silicon photonic systems",
+        "Breakthrough could pave the way for scalable quantum computers"
+      ],
+      "importantClaims": [
+        "Fault-tolerant error correction is now possible in silicon photonic quantum processors",
+        "This technology represents a shift from traditional electron-based quantum systems"
+      ],
+      "verificationStatus": "Confirmed",
+      "sourceAttribution": "Source: TechCrunch Science",
+      "emojis": "🚀🧠✨",
+      "aiAnalysis": {
+        "topic": "Quantum Computing Breakthrough with Silicon Photonic Processor",
+        "summary": "Physicists have developed a silicon photonic quantum computer processor with fault-tolerant error correction, marking a major leap in quantum technology.",
+        "keyFacts": [
+          "Silicon photonic technology enables quantum processing using photons instead of electrons",
+          "Fault-tolerant error correction achieved for the first time in silicon photonic systems",
+          "Breakthrough could pave the way for scalable quantum computers"
+        ],
+        "importantClaims": [
+          "Fault-tolerant error correction is now possible in silicon photonic quantum processors",
+          "This technology represents a shift from traditional electron-based quantum systems"
+        ],
+        "whyInteresting": "This discovery tackles a core challenge in quantum computing—error correction—while using light (photons), potentially unlocking faster, more stable quantum devices for real-world applications.",
+        "detectedType": "Fact"
+      },
+      "processedAt": "2026-08-14T05:23:03.439Z",
+      "approvedAt": "2026-08-14T05:23:08.369Z"
+    },
+    {
+      "id": "post-1786684579404-sedv",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684579403-g56i",
+      "originalText": "DeepMind announces new AlphaFold 3 milestone in molecular structure prediction.",
+      "sourceName": "TechCrunch",
+      "category": "News",
+      "notes": "AlphaFold test",
+      "status": "Ready",
+      "createdAt": "2026-08-14T05:16:19.403Z",
+      "updatedAt": "2026-08-14T05:16:55.137Z",
+      "aiRewrite": "DeepMind ne AlphaFold 3 launch kar diya hai!  Ab AI sirf proteins nahi, balkay DNA, RNA aur choti molecules (ligands) ki 3D structure bhi predict kar sakti hai. Ye drug discovery aur disease samajhne ke liye game-changer sabit ho sakta hai. Science ke liye kya din hai!  #AlphaFold3 #AI",
+      "headline": "DeepMind ka AlphaFold 3: Molecular Science mein Nayi Kranti",
+      "hashtags": [
+        "#DeepMind",
+        "#AlphaFold3",
+        "#AI",
+        "#ScienceNews",
+        "#Biotech"
+      ],
+      "summary": "DeepMind ne AlphaFold 3 ka naya version announce kiya hai jo molecular structures ko predict karne mein ek bara milestone hai.",
+      "keyFacts": [
+        "DeepMind ne AlphaFold 3 announce kiya",
+        "Ye molecular structure prediction ke liye hai",
+        "Drug discovery aur biology research mein madad karega"
+      ],
+      "importantClaims": [
+        "AlphaFold 3 ne prediction accuracy mein naya milestone achieve kiya - Needs verification",
+        "Ye proteins ke ilawa DNA, RNA aur ligands ko bhi predict kar sakta hai - Needs verification"
+      ],
+      "verificationStatus": "Needs Verification",
+      "sourceAttribution": "Source: TechCrunch",
+      "emojis": "",
+      "aiAnalysis": {
+        "topic": "AI Protein Folding Breakthrough",
+        "summary": "DeepMind ne AlphaFold 3 ka naya version announce kiya hai jo molecular structures ko predict karne mein ek bara milestone hai.",
+        "keyFacts": [
+          "DeepMind ne AlphaFold 3 announce kiya",
+          "Ye molecular structure prediction ke liye hai",
+          "Drug discovery aur biology research mein madad karega"
+        ],
+        "importantClaims": [
+          "AlphaFold 3 ne prediction accuracy mein naya milestone achieve kiya - Needs verification",
+          "Ye proteins ke ilawa DNA, RNA aur ligands ko bhi predict kar sakta hai - Needs verification"
+        ],
+        "whyInteresting": "Ye AI breakthrough medical research aur drug development ko revolutionize kar sakta hai, jo previously impossible tha.",
+        "detectedType": "News"
+      },
+      "processedAt": "2026-08-14T05:16:55.137Z"
+    },
+    {
+      "id": "post-1786684503074-20g2",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684503073-kuyw",
+      "originalText": "Researchers discover new ultra-efficient solar cell material that breaks 35 percent efficiency benchmark.",
+      "sourceName": "CleanTech Daily",
+      "category": "Fact",
+      "notes": "Solar breakthrough test",
+      "status": "Ready",
+      "createdAt": "2026-08-14T05:15:03.073Z",
+      "updatedAt": "2026-08-14T05:15:43.649Z",
+      "aiRewrite": "Suno dosto! CleanTech Daily ne bataya hai ke researchers ne naye ultra-efficient solar cell material discover kiya hai jo 35% efficiency ka benchmark tod deta hai! ☀️🔬 Is se solar energy pe depend kerna aur bhi cost-effective ho sakta hai! 📈",
+      "headline": "35% Efficiency Barrier Broken! New Solar Cell Material Changes Game",
+      "hashtags": [
+        "#SolarEnergy",
+        "#CleanTech",
+        "#Science",
+        "#RenewableEnergy"
+      ],
+      "summary": "Researchers have discovered a new ultra-efficient solar cell material that reportedly surpasses the 35% efficiency benchmark.",
+      "keyFacts": [
+        "New solar cell material discovered by researchers",
+        "Claims to achieve efficiency above 35%",
+        "Represents a significant leap in solar technology"
+      ],
+      "importantClaims": [
+        "The material reaches over 35% efficiency - Needs verification",
+        "It breaks the long-standing 35% efficiency benchmark - Needs verification"
+      ],
+      "verificationStatus": "Needs Verification",
+      "sourceAttribution": "Source: CleanTech Daily",
+      "emojis": "☀️🔬📈",
+      "aiAnalysis": {
+        "topic": "Breakthrough Solar Cell Material Exceeds 35% Efficiency",
+        "summary": "Researchers have discovered a new ultra-efficient solar cell material that reportedly surpasses the 35% efficiency benchmark.",
+        "keyFacts": [
+          "New solar cell material discovered by researchers",
+          "Claims to achieve efficiency above 35%",
+          "Represents a significant leap in solar technology"
+        ],
+        "importantClaims": [
+          "The material reaches over 35% efficiency - Needs verification",
+          "It breaks the long-standing 35% efficiency benchmark - Needs verification"
+        ],
+        "whyInteresting": "Such a high efficiency could revolutionise renewable energy adoption and reduce costs dramatically.",
+        "detectedType": "Fact"
+      },
+      "processedAt": "2026-08-14T05:15:43.649Z"
+    },
+    {
+      "id": "post-1786684380247-jqbj",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684380246-bqmm",
+      "originalText": "Test post about AI space telescope discoveries",
+      "sourceName": "NASA Daily",
+      "category": "Fact",
+      "notes": "Discovery test",
+      "status": "Ready",
+      "createdAt": "2026-08-14T05:13:00.246Z",
+      "updatedAt": "2026-08-14T05:13:56.925Z",
+      "aiRewrite": "Aaj ki bari tech aur space ki! 🌟 Space telescopes mein artificial intelligence (AI) ka istemal cosmic discoveries karne ke liye ho raha hai. Yah algorithms telescope ki bari images aur data ko itni jaldi process karta hai ke scientists nay exoplanets aur ancient galaxies bina kisi rukavat ke dhudh le rahe hain! Cosmos ki secret key AI hai dosto! 🚀✨",
+      "headline": "Cosmic Detective: How AI is Revolutionizing Space Telescope Discoveries!",
+      "hashtags": [
+        "#AI",
+        "#Space",
+        "#NASA",
+        "#Telescope",
+        "#Cosmos"
+      ],
+      "summary": "Artificial intelligence is transforming space exploration by helping telescopes analyze vast cosmic datasets to find exoplanets and early galaxies at unprecedented speeds.",
+      "keyFacts": [
+        "AI algorithms are used by space telescopes to quickly scan and analyze massive datasets of stars and galaxies.",
+        "Machine learning helps astronomers spot faint, distant exoplanets and ancient galaxies that manual analysis might miss.",
+        "Telescopes assisted by AI can process data in hours instead of weeks, accelerating scientific breakthroughs."
+      ],
+      "importantClaims": [
+        "AI-assisted telescopes significantly speed up the search for potentially habitable exoplanets.",
+        "AI can detect cosmic anomalies and distant galaxies far faster than traditional human-led data processing."
+      ],
+      "verificationStatus": "Confirmed",
+      "sourceAttribution": "Source: NASA Daily",
+      "emojis": "🚀✨🌌",
+      "aiAnalysis": {
+        "topic": "AI Space Telescope Discoveries",
+        "summary": "Artificial intelligence is transforming space exploration by helping telescopes analyze vast cosmic datasets to find exoplanets and early galaxies at unprecedented speeds.",
+        "keyFacts": [
+          "AI algorithms are used by space telescopes to quickly scan and analyze massive datasets of stars and galaxies.",
+          "Machine learning helps astronomers spot faint, distant exoplanets and ancient galaxies that manual analysis might miss.",
+          "Telescopes assisted by AI can process data in hours instead of weeks, accelerating scientific breakthroughs."
+        ],
+        "importantClaims": [
+          "AI-assisted telescopes significantly speed up the search for potentially habitable exoplanets.",
+          "AI can detect cosmic anomalies and distant galaxies far faster than traditional human-led data processing."
+        ],
+        "whyInteresting": "It highlights the powerful synergy between artificial intelligence and space science, showing how technology helps humanity explore the deep cosmos faster and deeper than ever before.",
+        "detectedType": "Fact"
+      },
+      "processedAt": "2026-08-14T05:13:56.925Z"
+    },
+    {
+      "id": "post-1786653669963-5dnl",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786653669962-m94c",
+      "originalText": "SpaceX Starship completes successful suborbital test flight with soft ocean splashdown.",
+      "sourceName": "Space News Feed",
+      "category": "News",
+      "notes": "Space test",
+      "status": "Ready",
+      "createdAt": "2026-08-13T20:41:09.962Z",
+      "updatedAt": "2026-08-14T05:00:04.583Z",
+      "aiRewrite": "Bilkul zabardast! SpaceX ki Starship ne aik successful suborbital test flight poori ki, aur soft ocean splashdown ke saath wapas aayi. Is tarah ka progress space travel ke future ke liye bohat ummeedi wala hai!",
+      "headline": "SpaceX Starship nails soft splashdown test!",
+      "hashtags": [
+        "#SpaceX",
+        "#Starship",
+        "#SpaceNews"
+      ],
+      "summary": "SpaceX Starship completed a successful suborbital test flight with a soft ocean splashdown, marking another milestone in reusable rocket development.",
+      "keyFacts": [
+        "SpaceX Starship completed a suborbital test flight",
+        "The flight ended with a soft ocean splashdown",
+        "The test was successful and achieved its objectives"
+      ],
+      "importantClaims": [
+        "The test flight was successful - Needs verification",
+        "The ocean splashdown was soft and controlled - Needs verification"
+      ],
+      "verificationStatus": "Needs Verification",
+      "sourceAttribution": "Source: Space News Feed",
+      "emojis": "🚀🌊✨",
+      "aiAnalysis": {
+        "topic": "SpaceX Starship test flight success",
+        "summary": "SpaceX Starship completed a successful suborbital test flight with a soft ocean splashdown, marking another milestone in reusable rocket development.",
+        "keyFacts": [
+          "SpaceX Starship completed a suborbital test flight",
+          "The flight ended with a soft ocean splashdown",
+          "The test was successful and achieved its objectives"
+        ],
+        "importantClaims": [
+          "The test flight was successful - Needs verification",
+          "The ocean splashdown was soft and controlled - Needs verification"
+        ],
+        "whyInteresting": "Shows progress toward fully reusable spacecraft for Mars and Moon missions.",
+        "detectedType": "News"
+      },
+      "processedAt": "2026-08-14T05:00:04.583Z"
+    },
+    {
+      "id": "post-1786653638629-khrs",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786653638628-5b0m",
+      "originalText": "OpenAI releases new open model architecture for developers across the globe.",
+      "sourceName": "Tech Radar Manual",
+      "category": "News",
+      "notes": "Test ingestion",
+      "status": "Approved",
+      "createdAt": "2026-08-13T20:40:38.628Z",
+      "updatedAt": "2026-08-13T20:41:02.607Z",
+      "aiRewrite": "{\". के categorical value must be one of the allowed strings: \": \"Funny\"}",
+      "headline": "Post Update",
+      "hashtags": [],
+      "summary": "",
+      "keyFacts": [],
+      "importantClaims": [],
+      "verificationStatus": "Confirmed",
+      "sourceAttribution": "Source: Tech Radar Manual",
+      "emojis": "✨📱",
+      "aiAnalysis": {
+        "topic": "General Topic",
+        "summary": "",
+        "keyFacts": [],
+        "importantClaims": [],
+        "whyInteresting": "",
+        "detectedType": "News"
+      },
+      "processedAt": "2026-08-13T20:40:59.386Z",
+      "approvedAt": "2026-08-13T20:41:02.607Z"
+    }
+  ],
+  "settings": {
+    "brandName": "Social AutoPilot Hub",
+    "defaultLanguage": "Roman Urdu / English",
+    "writingStyle": "Natural Roman Urdu (Short, engaging, conversational, natural emojis)",
+    "defaultCategory": "News",
+    "autoPublishing": false,
+    "requireApproval": true
+  },
+  "activities": [
+    {
+      "id": "act-1786684988369-vgui",
+      "timestamp": "2026-08-14T05:23:08.369Z",
+      "type": "status_changed",
+      "description": "Approved post \"Physicists Unveil Silicon Photonic Quantum Chip with 'Magic' Error Correction!\"",
+      "postId": "post-1786684973820-wtbe"
+    },
+    {
+      "id": "act-1786684983441-27oc",
+      "timestamp": "2026-08-14T05:23:03.441Z",
+      "type": "post_processed",
+      "description": "Trigger URL successfully processed post with OpenRouter AI",
+      "postId": "post-1786684973820-wtbe"
+    },
+    {
+      "id": "act-1786684973821-p4ll",
+      "timestamp": "2026-08-14T05:22:53.821Z",
+      "type": "post_added",
+      "description": "New source post ingested via URL (TechCrunch Science)",
+      "postId": "post-1786684973820-wtbe"
+    },
+    {
+      "id": "act-1786684615137-sval",
+      "timestamp": "2026-08-14T05:16:55.137Z",
+      "type": "post_processed",
+      "description": "Processed post with OpenRouter AI (News)",
+      "postId": "post-1786684579404-sedv"
+    },
+    {
+      "id": "act-1786684594934-xiuh",
+      "timestamp": "2026-08-14T05:16:34.934Z",
+      "type": "post_processed",
+      "description": "Trigger MANUAL successfully processed post with OpenRouter AI",
+      "postId": "post-1786684579404-sedv"
+    },
+    {
+      "id": "act-1786684579405-bx84",
+      "timestamp": "2026-08-14T05:16:19.405Z",
+      "type": "post_added",
+      "description": "New source post ingested via MANUAL (TechCrunch)",
+      "postId": "post-1786684579404-sedv"
+    },
+    {
+      "id": "act-1786684543650-k7ev",
+      "timestamp": "2026-08-14T05:15:43.650Z",
+      "type": "post_processed",
+      "description": "Trigger MANUAL successfully processed post with OpenRouter AI",
+      "postId": "post-1786684503074-20g2"
+    },
+    {
+      "id": "act-1786684503074-q1lu",
+      "timestamp": "2026-08-14T05:15:03.074Z",
+      "type": "post_added",
+      "description": "New source post ingested via MANUAL (CleanTech Daily)",
+      "postId": "post-1786684503074-20g2"
+    },
+    {
+      "id": "act-1786684436925-9erh",
+      "timestamp": "2026-08-14T05:13:56.925Z",
+      "type": "post_processed",
+      "description": "Processed post with OpenRouter AI (Fact)",
+      "postId": "post-1786684380247-jqbj"
+    },
+    {
+      "id": "act-1786684397563-k53a",
+      "timestamp": "2026-08-14T05:13:17.563Z",
+      "type": "post_processed",
+      "description": "Trigger MANUAL successfully processed post with OpenRouter AI",
+      "postId": "post-1786684380247-jqbj"
+    },
+    {
+      "id": "act-1786684380248-g46t",
+      "timestamp": "2026-08-14T05:13:00.248Z",
+      "type": "post_added",
+      "description": "New source post ingested via MANUAL (NASA Daily)",
+      "postId": "post-1786684380247-jqbj"
+    },
+    {
+      "id": "act-1786683604583-2hwm",
+      "timestamp": "2026-08-14T05:00:04.583Z",
+      "type": "post_processed",
+      "description": "Processed post with OpenRouter AI (News)",
+      "postId": "post-1786653669963-5dnl"
+    },
+    {
+      "id": "act-1786653684210-d3df",
+      "timestamp": "2026-08-13T20:41:24.210Z",
+      "type": "post_processed",
+      "description": "Trigger MANUAL successfully processed post with OpenRouter AI",
+      "postId": "post-1786653669963-5dnl"
+    },
+    {
+      "id": "act-1786653669963-pdyy",
+      "timestamp": "2026-08-13T20:41:09.963Z",
+      "type": "post_added",
+      "description": "New source post ingested via MANUAL (Space News Feed)",
+      "postId": "post-1786653669963-5dnl"
+    },
+    {
+      "id": "act-1786653662607-kik9",
+      "timestamp": "2026-08-13T20:41:02.607Z",
+      "type": "status_changed",
+      "description": "Approved post \"Post Update\"",
+      "postId": "post-1786653638629-khrs"
+    },
+    {
+      "id": "act-1786653659386-if6l",
+      "timestamp": "2026-08-13T20:40:59.386Z",
+      "type": "post_processed",
+      "description": "Processed post with OpenRouter AI (News)",
+      "postId": "post-1786653638629-khrs"
+    },
+    {
+      "id": "act-1786653649087-h8qk",
+      "timestamp": "2026-08-13T20:40:49.087Z",
+      "type": "post_processed",
+      "description": "Trigger MANUAL successfully processed post with OpenRouter AI",
+      "postId": "post-1786653638629-khrs"
+    },
+    {
+      "id": "act-1786653638629-1zd2",
+      "timestamp": "2026-08-13T20:40:38.629Z",
+      "type": "post_added",
+      "description": "New source post ingested via MANUAL (Tech Radar Manual)",
+      "postId": "post-1786653638629-khrs"
+    },
+    {
+      "id": "act-1786368934558-dal5",
+      "timestamp": "2026-08-10T13:35:34.558Z",
+      "type": "facebook_disconnected",
+      "description": "Meta Facebook OAuth failed [invalid_request]: Invalid Request: The OAuth authorization request was incomplete or malformed."
+    },
+    {
+      "id": "act-1786368934535-d73m",
+      "timestamp": "2026-08-10T13:35:34.535Z",
+      "type": "facebook_disconnected",
+      "description": "Meta Facebook OAuth failed [invalid_request]: Invalid Request: The OAuth authorization request was incomplete or malformed."
+    }
+  ],
+  "sourceConfig": {
+    "sourceId": "src-101",
+    "sourceName": "Public Tech Trends & News",
+    "sourceUrl": "https://facebook.com/public-news-feed",
+    "sourceType": "Facebook Page",
+    "triggerMethod": "Manual",
+    "enabled": true,
+    "createdAt": "2026-08-10T13:23:26.523Z",
+    "updatedAt": "2026-08-10T13:23:26.524Z",
+    "status": "CONFIGURED"
+  },
+  "automationRules": {
+    "autoProcessSource": false,
+    "requireApproval": true,
+    "autoPublishApproved": false
+  },
+  "sourcePosts": [
+    {
+      "id": "srcpost-1786684973819-h6bi",
+      "sourceUrl": "https://techcrunch.com/quantum-computing-milestone",
+      "sourceName": "TechCrunch Science",
+      "sourceType": "Public Source",
+      "sourceText": "Physicists announce revolutionary silicon photonic quantum computer processor capable of fault-tolerant error correction.",
+      "triggerType": "URL",
+      "receivedAt": "2026-08-14T05:22:53.819Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-14T05:22:53.819Z",
+      "updatedAt": "2026-08-14T05:22:53.819Z",
+      "processedAt": "2026-08-14T05:23:03.440Z"
+    },
+    {
+      "id": "srcpost-1786684579403-g56i",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684579403-g56i",
+      "sourceName": "TechCrunch",
+      "sourceType": "Public Source",
+      "sourceText": "DeepMind announces new AlphaFold 3 milestone in molecular structure prediction.",
+      "triggerType": "MANUAL",
+      "receivedAt": "2026-08-14T05:16:19.403Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-14T05:16:19.403Z",
+      "updatedAt": "2026-08-14T05:16:19.403Z",
+      "processedAt": "2026-08-14T05:16:34.934Z"
+    },
+    {
+      "id": "srcpost-1786684503073-kuyw",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684503073-kuyw",
+      "sourceName": "CleanTech Daily",
+      "sourceType": "Public Source",
+      "sourceText": "Researchers discover new ultra-efficient solar cell material that breaks 35 percent efficiency benchmark.",
+      "triggerType": "MANUAL",
+      "receivedAt": "2026-08-14T05:15:03.073Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-14T05:15:03.073Z",
+      "updatedAt": "2026-08-14T05:15:03.073Z",
+      "processedAt": "2026-08-14T05:15:43.649Z"
+    },
+    {
+      "id": "srcpost-1786684380246-bqmm",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786684380246-bqmm",
+      "sourceName": "NASA Daily",
+      "sourceType": "Public Source",
+      "sourceText": "Test post about AI space telescope discoveries",
+      "triggerType": "MANUAL",
+      "receivedAt": "2026-08-14T05:13:00.246Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-14T05:13:00.246Z",
+      "updatedAt": "2026-08-14T05:13:00.246Z",
+      "processedAt": "2026-08-14T05:13:17.562Z"
+    },
+    {
+      "id": "srcpost-1786653669962-m94c",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786653669962-m94c",
+      "sourceName": "Space News Feed",
+      "sourceType": "Public Source",
+      "sourceText": "SpaceX Starship completes successful suborbital test flight with soft ocean splashdown.",
+      "triggerType": "MANUAL",
+      "receivedAt": "2026-08-13T20:41:09.962Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-13T20:41:09.962Z",
+      "updatedAt": "2026-08-13T20:41:09.962Z",
+      "processedAt": "2026-08-13T20:41:24.210Z"
+    },
+    {
+      "id": "srcpost-1786653638628-5b0m",
+      "sourceUrl": "https://local-intake.internal/srcpost-1786653638628-5b0m",
+      "sourceName": "Tech Radar Manual",
+      "sourceType": "Public Source",
+      "sourceText": "OpenAI releases new open model architecture for developers across the globe.",
+      "triggerType": "MANUAL",
+      "receivedAt": "2026-08-13T20:40:38.628Z",
+      "status": "PROCESSED",
+      "createdAt": "2026-08-13T20:40:38.628Z",
+      "updatedAt": "2026-08-13T20:40:38.628Z",
+      "processedAt": "2026-08-13T20:40:49.086Z"
+    }
+  ],
+  "triggerLogs": [
+    {
+      "id": "trig-1786684983441-dacj",
+      "timestamp": "2026-08-14T05:23:03.441Z",
+      "trigger": "URL",
+      "source": "TechCrunch Science",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"Physicists Unveil Silicon Photonic Quantum Chip with 'Magic' Error Correction!\""
+    },
+    {
+      "id": "trig-1786684973820-uefq",
+      "timestamp": "2026-08-14T05:22:53.820Z",
+      "trigger": "URL",
+      "source": "TechCrunch Science",
+      "status": "Received",
+      "details": "Ingested source payload via URL"
+    },
+    {
+      "id": "trig-1786684594935-wtve",
+      "timestamp": "2026-08-14T05:16:34.935Z",
+      "trigger": "MANUAL",
+      "source": "TechCrunch",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"DeepMind Launch AlphaFold 3: AI Revolutionizes Molecular Structure Prediction\""
+    },
+    {
+      "id": "trig-1786684579404-vcdl",
+      "timestamp": "2026-08-14T05:16:19.404Z",
+      "trigger": "MANUAL",
+      "source": "TechCrunch",
+      "status": "Received",
+      "details": "Ingested source payload via MANUAL"
+    },
+    {
+      "id": "trig-1786684543650-orn5",
+      "timestamp": "2026-08-14T05:15:43.650Z",
+      "trigger": "MANUAL",
+      "source": "CleanTech Daily",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"35% Efficiency Barrier Broken! New Solar Cell Material Changes Game\""
+    },
+    {
+      "id": "trig-1786684503073-zsv5",
+      "timestamp": "2026-08-14T05:15:03.073Z",
+      "trigger": "MANUAL",
+      "source": "CleanTech Daily",
+      "status": "Received",
+      "details": "Ingested source payload via MANUAL"
+    },
+    {
+      "id": "trig-1786684397563-0viu",
+      "timestamp": "2026-08-14T05:13:17.563Z",
+      "trigger": "MANUAL",
+      "source": "NASA Daily",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"AI Space Telescopes: Unlocking the Secrets of the Universe! 🌌🚀\""
+    },
+    {
+      "id": "trig-1786684380247-gcpj",
+      "timestamp": "2026-08-14T05:13:00.247Z",
+      "trigger": "MANUAL",
+      "source": "NASA Daily",
+      "status": "Received",
+      "details": "Ingested source payload via MANUAL"
+    },
+    {
+      "id": "trig-1786653684210-12si",
+      "timestamp": "2026-08-13T20:41:24.210Z",
+      "trigger": "MANUAL",
+      "source": "Space News Feed",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"Starship Udaan Kamyab: Samandar Mein Soft Landing!\""
+    },
+    {
+      "id": "trig-1786653669963-k42p",
+      "timestamp": "2026-08-13T20:41:09.963Z",
+      "trigger": "MANUAL",
+      "source": "Space News Feed",
+      "status": "Received",
+      "details": "Ingested source payload via MANUAL"
+    },
+    {
+      "id": "trig-1786653649087-uoeh",
+      "timestamp": "2026-08-13T20:40:49.087Z",
+      "trigger": "MANUAL",
+      "source": "Tech Radar Manual",
+      "status": "Processed",
+      "details": "Processed & AI rewritten into \"OpenAI Unveils Open Model Architecture to Empower Global Developers!\""
+    },
+    {
+      "id": "trig-1786653638629-n9qg",
+      "timestamp": "2026-08-13T20:40:38.629Z",
+      "trigger": "MANUAL",
+      "source": "Tech Radar Manual",
+      "status": "Received",
+      "details": "Ingested source payload via MANUAL"
+    }
+  ]
+}

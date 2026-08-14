@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Social AutoPilot</title>
+    <meta name="description" content="Professional social media content automation and publishing dashboard." />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Social AutoPilot" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <script>
+      (function() {
+        try {
+          var _fetch = window.fetch;
+          var descriptor = Object.getOwnPropertyDescriptor(window, 'fetch') ||
+                           Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window), 'fetch');
+          if (descriptor && (!descriptor.writable || !descriptor.set)) {
+            Object.defineProperty(window, 'fetch', {
+              configurable: true,
+              enumerable: true,
+              get: function() { return _fetch; },
+              set: function(val) { _fetch = val; }
+            });
+          }
+        } catch (e) {
+          console.warn('Fetch property patch warning:', e);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,6 @@
+{
+  "name": "Social AutoPilot",
+  "description": "Professional social media automation dashboard with PWA Web Share Target and AI rewriting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
