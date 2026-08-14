@@ -5,7 +5,10 @@ import { createServer as createViteServer } from 'vite';
 import {
   callOpenRouterAI,
   isOpenRouterConfigured,
+  isAiConfigured,
+  isGeminiConfigured,
 } from './server/openrouterService.js';
+import { getAiProviderInfo, processContentWithAi } from './server/aiService.js';
 import {
   Post,
   Settings,
@@ -131,6 +134,7 @@ app.post('/api/source/intake', async (req, res) => {
       triggerType: req.body.triggerType,
       category: req.body.category,
       notes: req.body.notes,
+      imageUrl: req.body.imageUrl ? String(req.body.imageUrl).trim() : undefined,
       webhookSecret: extractedSecret || req.body.webhookSecret,
     };
 
@@ -181,6 +185,12 @@ app.get('/api/source-posts', (_req, res) => {
   res.json({ sourcePosts: store.sourcePosts || [] });
 });
 
+// GET /api/ai/status - Status of AI text rewrite providers (Gemini & OpenRouter)
+app.get('/api/ai/status', (_req, res) => {
+  const info = getAiProviderInfo();
+  res.json(info);
+});
+
 // GET /api/ai/image-status - Status of AI image editing provider
 app.get('/api/ai/image-status', (_req, res) => {
   const configured = isGeminiImageEditingConfigured();
@@ -212,6 +222,9 @@ app.post('/api/extract-url', async (req, res) => {
       imageUrl: info.imageUrl,
       sourceName: info.sourceName || '',
       isDirectImage: Boolean(info.isDirectImage),
+      isFacebook: Boolean(info.isFacebook),
+      facebookNotice: info.facebookNotice,
+      warning: info.warning,
     });
   } catch (err: any) {
     console.warn(`[API /api/extract-url] Extraction warning for ${url}:`, err);
@@ -412,12 +425,12 @@ app.delete('/api/posts/:id', (req, res) => {
   res.json({ message: 'Post deleted successfully', id: post.id });
 });
 
-// POST process post with OpenRouter AI
+// POST process post with AI (Gemini primary, OpenRouter secondary, non-blocking fallback)
 app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
   let targetId = extractPostIdFromRequest(req);
   let found = findPostById(targetId);
 
-  // If not found in store but post payload is present, hydrate into store (resilience across containers/cold starts)
+  // If not found in store but post payload is present, hydrate into store
   if (!found && req.body && (req.body.post || req.body.originalText)) {
     const postPayload = req.body.post || req.body;
     const hydratedId = postPayload.id || targetId || `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
@@ -430,6 +443,7 @@ app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
       sourceName: postPayload.sourceName || 'Manual Submission',
       category: postPayload.category || store.settings.defaultCategory || 'General',
       notes: postPayload.notes || '',
+      imageUrl: postPayload.imageUrl,
       status: 'Processing',
       createdAt: postPayload.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -441,10 +455,7 @@ app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
     console.log(`[Diagnostic] Hydrated post "${hydratedId}" into store from request payload.`);
   }
 
-  console.log(`[Diagnostic] Process Post Request - rawParam: "${req.params?.id}", bodyId: "${req.body?.id}", normalizedId: "${targetId}", found: ${Boolean(found)}`);
-
   if (!found) {
-    console.warn(`[Diagnostic] Post not found for ID "${targetId}". Store has ${store.posts.length} posts: [${store.posts.map(p => p.id).join(', ')}]`);
     return res.status(404).json({
       error: 'Post not found',
       requestedId: targetId,
@@ -452,16 +463,8 @@ app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
     });
   }
 
-  if (!isOpenRouterConfigured()) {
-    console.warn('[Diagnostic] OpenRouter AI key is missing.');
-    return res.status(400).json({
-      error: 'OpenRouter AI is not configured yet. Add OPENROUTER_API_KEY in the deployment environment.',
-    });
-  }
-
   const { post, index: postIndex } = found;
 
-  // Mark status as Processing during execution
   post.status = 'Processing';
   post.updatedAt = new Date().toISOString();
   saveStore();
@@ -470,7 +473,7 @@ app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
     const writingStyle = store.settings.writingStyle || 'Natural Roman Urdu (Short, engaging, conversational, natural emojis)';
     const brandName = store.settings.brandName || 'Social AutoPilot Hub';
 
-    const aiResult = await callOpenRouterAI({
+    const aiResult = await processContentWithAi({
       sourceName: post.sourceName,
       categoryHint: post.category,
       originalText: post.originalText,
@@ -509,32 +512,33 @@ app.post(['/api/posts/:id/process', '/api/posts/process'], async (req, res) => {
     post.status = 'Ready';
     post.processedAt = new Date().toISOString();
     post.updatedAt = new Date().toISOString();
-    post.error = undefined;
+    post.error = aiResult.warning || undefined;
 
     store.posts[postIndex] = post;
-    logActivity('post_processed', `Processed post with OpenRouter AI (${aiResult.category})`, post.id);
+    logActivity('post_processed', `Processed post with AI [${aiResult.provider.toUpperCase()}] (${aiResult.category})`, post.id);
     saveStore();
 
-    console.log(`[Diagnostic] OpenRouter AI processing succeeded for post "${post.id}" -> Status: ${post.status}, Category: ${post.category}`);
-
     return res.json({
-      message: 'Post successfully processed with OpenRouter AI',
+      message: `Post successfully processed with ${aiResult.provider.toUpperCase()} AI`,
       post,
+      provider: aiResult.provider,
     });
   } catch (err: any) {
-    console.error(`[Diagnostic] OpenRouter AI processing error for post ${post.id}:`, err);
+    console.warn(`[Diagnostic] AI processing fallback for post ${post.id}:`, err);
 
-    post.status = 'Failed';
-    post.error = err?.message || 'OpenRouter processing failed. Please check network/key and try again.';
+    post.status = 'Ready';
+    post.aiRewrite = post.aiRewrite || post.originalText;
+    post.error = `AI auto-rewrite note: ${err?.message || 'Offline fallback in use'}. Content is ready to review.`;
     post.updatedAt = new Date().toISOString();
 
     store.posts[postIndex] = post;
-    logActivity('status_changed', `OpenRouter processing failed for post "${post.id}"`, post.id);
+    logActivity('status_changed', `Post "${post.id}" prepared with fallback content`, post.id);
     saveStore();
 
-    return res.status(500).json({
-      error: post.error,
+    return res.json({
+      message: 'Post prepared with original content and non-blocking fallback',
       post,
+      provider: 'fallback',
     });
   }
 });

@@ -1,6 +1,6 @@
 import { SourcePost, Post, PostCategory, TriggerType, TriggerActivityLog } from '../../src/types.js';
 import { TriggerPayload, TriggerResult } from './types.js';
-import { callOpenRouterAI, isOpenRouterConfigured } from '../openrouterService.js';
+import { processContentWithAi } from '../aiService.js';
 import { extractUrlMetadataAndImage } from '../urlExtractor.js';
 
 export interface StoreContext {
@@ -26,6 +26,19 @@ export class ContentProcessor {
     this.store = store;
   }
 
+  /**
+   * Processes incoming content following the priority-based ingestion system:
+   * 1. Priority A: Native Share Data (Immediate text + image if provided by Share Sheet / Web Share)
+   * 2. Priority B: Direct Image URL (If source URL points directly to an image asset)
+   * 3. Priority C: Public Page Metadata (og:image, og:description, meta tags, schema.org)
+   * 4. Priority D: Facebook Fallback (Preserve shared Facebook URL & text; never fail fatally on login walls)
+   * 5. Priority E: Manual Content Input
+   *
+   * Ensures:
+   * - ZERO duplicate checks (same URL, text, or image can be added indefinitely)
+   * - Text + Image stay together in the same source post record
+   * - AI failures or rate limits never destroy the intake workflow (non-blocking fallback)
+   */
   public async processIntake(payload: TriggerPayload, triggerType: TriggerType): Promise<TriggerResult> {
     const rawUrl = (payload.sourceUrl || '').trim();
     let rawText = (payload.sourceText || '').trim();
@@ -33,20 +46,21 @@ export class ContentProcessor {
     const sourceType = payload.sourceType || 'Public Source';
     const categoryHint = payload.category || this.store.getDefaultCategory();
     const notes = (payload.notes || '').trim();
+    let extractedImageUrl: string | undefined = payload.imageUrl ? payload.imageUrl.trim() : undefined;
+    let nonBlockingWarning: string | undefined = undefined;
 
-    // 1. Validation: ensure at least URL or Text is present
-    if (!rawUrl && !rawText) {
-      this.logTriggerEvent(triggerType, rawName || 'Unknown Source', 'Failed', 'Missing both URL and source text.');
+    // 1. Basic validation: require at least URL, text, or image
+    if (!rawUrl && !rawText && !extractedImageUrl) {
+      this.logTriggerEvent(triggerType, rawName || 'Unknown Source', 'Failed', 'Missing source URL, text, or image.');
       return {
         success: false,
-        message: 'Validation failed: A source URL or original text must be provided.',
+        message: 'Validation failed: A source URL, post text, or image must be provided.',
         triggerType,
-        error: 'Missing required payload data (sourceUrl or sourceText).',
+        error: 'Missing required payload content.',
       };
     }
 
-    let extractedImageUrl: string | undefined = payload.imageUrl ? payload.imageUrl.trim() : undefined;
-
+    // 2. Multi-Source Metadata & Media Extraction
     if (rawUrl) {
       try {
         const parsedUrl = new URL(rawUrl);
@@ -57,26 +71,34 @@ export class ContentProcessor {
           rawName = parsedUrl.hostname.replace(/^www\./i, '');
         }
 
-        // Attempt fault-tolerant URL metadata and image extraction
-        try {
-          const urlInfo = await extractUrlMetadataAndImage(rawUrl);
-          if (urlInfo.imageUrl && !extractedImageUrl) {
-            extractedImageUrl = urlInfo.imageUrl;
-          }
-          if (urlInfo.sourceName && !payload.sourceName) {
-            rawName = urlInfo.sourceName;
-          }
-          // If text was empty or placeholder, enrich with extracted title and description
-          if (!rawText || rawText === rawUrl) {
-            const parts: string[] = [];
-            if (urlInfo.title) parts.push(urlInfo.title);
-            if (urlInfo.description) parts.push(urlInfo.description);
-            if (parts.length > 0) {
-              rawText = parts.join('\n\n');
+        // Only scrape if we don't already have both rich text and image from Native Share Sheet
+        const needsScraping = !rawText || !extractedImageUrl;
+
+        if (needsScraping) {
+          try {
+            const urlInfo = await extractUrlMetadataAndImage(rawUrl);
+            if (urlInfo.imageUrl && !extractedImageUrl) {
+              extractedImageUrl = urlInfo.imageUrl;
             }
+            if (urlInfo.sourceName && !payload.sourceName) {
+              rawName = urlInfo.sourceName;
+            }
+            if (urlInfo.facebookNotice) {
+              nonBlockingWarning = urlInfo.facebookNotice;
+            }
+
+            // Populate text from extracted title & description if none was supplied
+            if (!rawText || rawText === rawUrl) {
+              const parts: string[] = [];
+              if (urlInfo.title) parts.push(urlInfo.title);
+              if (urlInfo.description) parts.push(urlInfo.description);
+              if (parts.length > 0) {
+                rawText = parts.join('\n\n');
+              }
+            }
+          } catch (extractErr: any) {
+            console.warn(`[ContentProcessor] Non-blocking metadata extraction note for ${rawUrl}:`, extractErr?.message);
           }
-        } catch (extractErr) {
-          console.warn(`[ContentProcessor] Metadata/image extraction skipped for ${rawUrl}:`, extractErr);
         }
       } catch (err: any) {
         this.logTriggerEvent(triggerType, rawUrl, 'Failed', `Invalid URL format: ${err.message}`);
@@ -93,8 +115,12 @@ export class ContentProcessor {
       rawName = `Manual Intake (${triggerType})`;
     }
 
-    // 2. Create SourcePost Record (Each addition is independent - no duplicate blocks)
-    const sourcePostId = `srcpost-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    if (!rawText) {
+      rawText = rawUrl ? `[Shared Link: ${rawUrl}]` : 'Shared Post Content';
+    }
+
+    // 3. Create Unique SourcePost Record (Zero duplicate restrictions)
+    const sourcePostId = `srcpost-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const nowIso = new Date().toISOString();
 
     const sourcePostRecord: SourcePost = {
@@ -102,7 +128,7 @@ export class ContentProcessor {
       sourceUrl: rawUrl || `https://local-intake.internal/${sourcePostId}`,
       sourceName: rawName,
       sourceType,
-      sourceText: rawText || `[Source Link Input: ${rawUrl}]`,
+      sourceText: rawText,
       triggerType,
       receivedAt: nowIso,
       status: 'NEW',
@@ -111,15 +137,15 @@ export class ContentProcessor {
     };
 
     this.store.addSourcePost(sourcePostRecord);
-    this.logTriggerEvent(triggerType, rawName, 'Received', `Ingested source payload via ${triggerType}`);
+    this.logTriggerEvent(triggerType, rawName, 'Received', `Ingested source post with media and text via ${triggerType}`);
 
-    // 3. Create initial Post in Content Queue (Independent record)
-    const postId = `post-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    // 4. Create Unique Post in Content Queue
+    const postId = `post-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const newPost: Post = {
       id: postId,
       sourceUrl: sourcePostRecord.sourceUrl,
-      originalText: sourcePostRecord.sourceText,
-      sourceName: sourcePostRecord.sourceName,
+      originalText: rawText,
+      sourceName: rawName,
       category: categoryHint,
       notes,
       imageUrl: extractedImageUrl,
@@ -132,29 +158,12 @@ export class ContentProcessor {
     this.store.logActivity('post_added', `New source post ingested via ${triggerType} (${rawName})`, newPost.id);
     this.store.save();
 
-    // 4. Run OpenRouter AI Pipeline if API Key is configured
-    if (!isOpenRouterConfigured()) {
-      newPost.status = 'New';
-      newPost.error = 'OpenRouter API key is not configured. Post added to queue for manual AI trigger.';
-      this.store.updatePost(postId, newPost);
-      this.store.updateSourcePost(sourcePostId, { status: 'PROCESSED', processedAt: new Date().toISOString() });
-      this.logTriggerEvent(triggerType, rawName, 'Processed', 'Post queued; OpenRouter API key missing.');
-      this.store.save();
-
-      return {
-        success: true,
-        message: 'Source post received and queued. OpenRouter AI is currently not configured; post is ready for manual AI processing.',
-        triggerType,
-        sourcePost: sourcePostRecord,
-        post: newPost,
-      };
-    }
-
+    // 5. Execute Resilient AI Pipeline (Gemini -> OpenRouter -> Non-blocking Fallback)
     try {
       const writingStyle = this.store.getWritingStyle() || 'Natural Roman Urdu (Short, engaging, conversational, natural emojis)';
       const brandName = this.store.getBrandName() || 'Social AutoPilot Hub';
 
-      const aiResult = await callOpenRouterAI({
+      const aiResult = await processContentWithAi({
         sourceName: newPost.sourceName,
         categoryHint: newPost.category,
         originalText: newPost.originalText,
@@ -184,10 +193,16 @@ export class ContentProcessor {
         whyInteresting: aiResult.whyInteresting || '',
         detectedType: aiResult.category,
       };
+
       newPost.status = 'Ready';
       newPost.processedAt = new Date().toISOString();
       newPost.updatedAt = new Date().toISOString();
-      newPost.error = undefined;
+
+      if (aiResult.warning || nonBlockingWarning) {
+        newPost.error = [aiResult.warning, nonBlockingWarning].filter(Boolean).join(' | ');
+      } else {
+        newPost.error = undefined;
+      }
 
       this.store.updatePost(postId, newPost);
       this.store.updateSourcePost(sourcePostId, {
@@ -195,32 +210,33 @@ export class ContentProcessor {
         processedAt: new Date().toISOString(),
       });
 
-      this.store.logActivity('post_processed', `Trigger ${triggerType} successfully processed post with OpenRouter AI`, newPost.id);
-      this.logTriggerEvent(triggerType, rawName, 'Processed', `Processed & AI rewritten into "${newPost.headline || 'Post'}"`);
+      this.store.logActivity('post_processed', `Content ingested and prepared via ${triggerType} [${aiResult.provider.toUpperCase()}]`, newPost.id);
+      this.logTriggerEvent(triggerType, rawName, 'Processed', `Post ready in queue: "${newPost.headline || 'Post'}"`);
       this.store.save();
 
       return {
         success: true,
-        message: 'Source post received and processed successfully through OpenRouter AI pipeline.',
+        message: 'Source content and media successfully received, processed, and added to the Content Queue.',
         triggerType,
         sourcePost: sourcePostRecord,
         post: newPost,
       };
     } catch (err: any) {
-      console.error(`Trigger processing OpenRouter AI error:`, err);
+      console.warn(`[ContentProcessor] Fallback post protection triggered:`, err);
 
-      newPost.status = 'New';
-      newPost.error = `OpenRouter AI auto-processing paused: ${err.message || 'Error'}. You can retry AI processing from the queue.`;
+      newPost.status = 'Ready';
+      newPost.aiRewrite = newPost.originalText;
+      newPost.error = `AI auto-rewrite warning: ${err.message || 'Unavailable'}. Original text and media are ready to review and publish.`;
       newPost.updatedAt = new Date().toISOString();
 
       this.store.updatePost(postId, newPost);
       this.store.updateSourcePost(sourcePostId, { status: 'PROCESSED', processedAt: new Date().toISOString() });
-      this.logTriggerEvent(triggerType, rawName, 'Processed', `Post added to queue; OpenRouter AI paused (${err.message || 'Error'})`);
+      this.logTriggerEvent(triggerType, rawName, 'Processed', `Post queued with original content intact.`);
       this.store.save();
 
       return {
         success: true,
-        message: `Source post added to Content Queue. OpenRouter AI processing was paused: ${err.message || 'Error'}`,
+        message: 'Source post and media successfully added to Content Queue with original content intact.',
         triggerType,
         sourcePost: sourcePostRecord,
         post: newPost,
@@ -228,13 +244,13 @@ export class ContentProcessor {
     }
   }
 
-  private logTriggerEvent(trigger: TriggerType, source: string, status: 'Received' | 'Processed' | 'Failed' | 'Ignored', details?: string) {
+  private logTriggerEvent(triggerType: TriggerType, source: string, status: 'Received' | 'Processed' | 'Failed' | 'Ignored', details: string) {
     const log: TriggerActivityLog = {
-      id: `trig-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      timestamp: new Date().toISOString(),
-      trigger,
+      id: `triglog-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      triggerType,
       source,
       status,
+      timestamp: new Date().toISOString(),
       details,
     };
     this.store.addTriggerLog(log);

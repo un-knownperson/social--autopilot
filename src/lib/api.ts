@@ -70,6 +70,9 @@ export interface ExtractedUrlPreview {
   imageUrl?: string;
   sourceName?: string;
   isDirectImage?: boolean;
+  isFacebook?: boolean;
+  facebookNotice?: string;
+  warning?: string;
   error?: string;
 }
 
@@ -85,6 +88,8 @@ export async function extractUrlPreview(url: string): Promise<ExtractedUrlPrevie
   }
   return data;
 }
+
+export const extractUrlMetadata = extractUrlPreview;
 
 export interface ImageAiEditResult {
   success: boolean;

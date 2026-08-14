@@ -1,13 +1,11 @@
 /**
- * Utility for flexible, fault-tolerant URL metadata and image extraction.
- * Supports:
- * - Direct image URLs (.jpg, .jpeg, .png, .webp, .gif, .avif, .svg)
- * - Open Graph (og:image, og:image:secure_url, og:image:url)
- * - Twitter/X Card (twitter:image, twitter:image:src)
- * - Schema.org JSON-LD (image, thumbnailUrl)
- * - Standard HTML preview tags (<link rel="image_src">, <meta itemprop="image">, <meta name="thumbnail">)
- * - Fallback prominent <img> tags
- * - Graceful fallback on bot-blocked/timeout/error URLs without failing post creation
+ * Multi-Source URL Ingestion & Fault-Tolerant Metadata/Image Extractor.
+ * Priority Ingestion Support:
+ * A) Native Share Data (Share Sheet: text, image, url, title)
+ * B) Direct Image URLs (.jpg, .jpeg, .png, .webp, .gif, .avif, .svg)
+ * C) Public Webpage Metadata (og:image, twitter:image, meta tags, json-ld)
+ * D) Facebook URL Fallback (Never fails fatally; preserves URL, handles login walls gracefully)
+ * E) Manual User Input Fallback
  */
 
 export interface ExtractedUrlInfo {
@@ -16,9 +14,63 @@ export interface ExtractedUrlInfo {
   description?: string;
   sourceName?: string;
   isDirectImage?: boolean;
+  isFacebook?: boolean;
+  facebookNotice?: string;
+  warning?: string;
 }
 
 const DIRECT_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif|svg|avif|bmp|ico|tiff)(\?.*)?$/i;
+
+/**
+ * Recognizes Facebook domains and short links.
+ */
+export function isFacebookDomain(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+  return (
+    host === 'facebook.com' ||
+    host === 'www.facebook.com' ||
+    host === 'm.facebook.com' ||
+    host === 'web.facebook.com' ||
+    host === 'fb.watch' ||
+    host === 'fb.com' ||
+    host === 'fb.me' ||
+    host === 'l.facebook.com' ||
+    host === 'lm.facebook.com' ||
+    host.endsWith('.facebook.com')
+  );
+}
+
+/**
+ * Checks if a hostname or IP is a private/internal network address to prevent SSRF.
+ */
+export function isPrivateOrInternalHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host === '0.0.0.0' ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host.endsWith('.localhost')
+  ) {
+    return true;
+  }
+
+  // IPv4 Private Range Checks
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (a === 10) return true; // 10.0.0.0/8
+    if (a === 127) return true; // 127.0.0.0/8
+    if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+    if (a === 192 && b === 168) return true; // 192.168.0.0/16
+    if (a === 169 && b === 254) return true; // Link-local 169.254.0.0/16
+    if (a === 0) return true;
+  }
+
+  return false;
+}
 
 /**
  * Normalizes and resolves a potential image URL relative to the source page URL.
@@ -26,12 +78,11 @@ const DIRECT_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif|svg|avif|bmp|ico|tiff)(\?
 function resolveImageUrl(candidateUrl: string, baseUrl: string): string | undefined {
   if (!candidateUrl || typeof candidateUrl !== 'string') return undefined;
   const trimmed = candidateUrl.trim();
-  if (!trimmed || trimmed.startsWith('data:') && trimmed.length < 200) {
-    // Skip placeholder 1x1 data URIs
+  if (!trimmed || (trimmed.startsWith('data:') && trimmed.length < 200)) {
     return undefined;
   }
 
-  // Handle protocol-relative URLs (//example.com/img.jpg)
+  // Protocol-relative URLs (//example.com/img.jpg)
   if (trimmed.startsWith('//')) {
     try {
       const base = new URL(baseUrl);
@@ -52,7 +103,8 @@ function resolveImageUrl(candidateUrl: string, baseUrl: string): string | undefi
 }
 
 /**
- * Extracts metadata and image from any HTTP/HTTPS URL with zero domain restrictions and full fault-tolerance.
+ * Extracts metadata and image from any HTTP/HTTPS URL with multi-source priority,
+ * resilient Facebook handling, and non-blocking fallback.
  */
 export async function extractUrlMetadataAndImage(rawUrl: string): Promise<ExtractedUrlInfo> {
   const result: ExtractedUrlInfo = {};
@@ -65,13 +117,18 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
       return result;
     }
+    if (isPrivateOrInternalHost(parsedUrl.hostname)) {
+      return result;
+    }
   } catch (_) {
     return result;
   }
 
-  result.sourceName = parsedUrl.hostname.replace(/^www\./i, '');
+  const isFb = isFacebookDomain(parsedUrl.hostname);
+  result.isFacebook = isFb;
+  result.sourceName = isFb ? 'Facebook' : parsedUrl.hostname.replace(/^www\./i, '');
 
-  // 1. Check if the URL itself is a direct image URL by file extension
+  // Priority B: Direct Image URL Check
   if (DIRECT_IMAGE_EXTENSIONS.test(parsedUrl.pathname)) {
     result.imageUrl = trimmedUrl;
     result.isDirectImage = true;
@@ -79,7 +136,7 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
     return result;
   }
 
-  // 2. Fetch the page with a safe timeout and realistic user-agent headers
+  // Priority C & D: Webpage Scraping with Facebook-aware tolerance
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6500);
@@ -98,20 +155,23 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`[UrlExtractor] HTTP ${response.status} returned for ${trimmedUrl}. Continuing post creation without image.`);
+      console.warn(`[UrlExtractor] HTTP ${response.status} returned for ${trimmedUrl}.`);
+      if (isFb) {
+        result.facebookNotice = 'Facebook provided limited page data. Using the content shared with the app.';
+      }
       return result;
     }
 
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-    // If the server returns an image Content-Type, treat the URL itself as the image
+    // If Content-Type is image
     if (contentType.startsWith('image/')) {
       result.imageUrl = trimmedUrl;
       result.isDirectImage = true;
       return result;
     }
 
-    // Read only up to first 512KB for performance and security
+    // Read up to 512KB for performance and safety
     const html = await response.text();
     const sampleHtml = html.slice(0, 512 * 1024);
 
@@ -121,7 +181,11 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       sampleHtml.match(/<meta\s+name=["']twitter:title["']\s+content=["']([^"']+)["']/i) ||
       sampleHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
-      result.title = decodeHtmlEntities(titleMatch[1].trim());
+      const extractedTitle = decodeHtmlEntities(titleMatch[1].trim());
+      // Filter generic Facebook login titles
+      if (!isFb || (!extractedTitle.toLowerCase().includes('log in') && !extractedTitle.toLowerCase().includes('facebook –'))) {
+        result.title = extractedTitle;
+      }
     }
 
     // Extract Description
@@ -133,10 +197,10 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       result.description = decodeHtmlEntities(descMatch[1].trim());
     }
 
-    // Extract Candidate Images in order of priority:
+    // Extract Candidate Images
     const candidateImages: string[] = [];
 
-    // 1) Open Graph image (og:image, og:image:secure_url, og:image:url)
+    // 1) Open Graph image
     const ogMatches = [
       ...sampleHtml.matchAll(/<meta\s+[^>]*property=["'](?:og:image|og:image:secure_url|og:image:url)["'][^>]*content=["']([^"']+)["']/gi),
       ...sampleHtml.matchAll(/<meta\s+[^>]*content=["']([^"']+)["'][^>]*property=["'](?:og:image|og:image:secure_url|og:image:url)["']/gi),
@@ -145,7 +209,7 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       if (match[1]) candidateImages.push(match[1]);
     }
 
-    // 2) Twitter / X card image (twitter:image, twitter:image:src)
+    // 2) Twitter Card image
     const twitterMatches = [
       ...sampleHtml.matchAll(/<meta\s+[^>]*name=["'](?:twitter:image|twitter:image:src)["'][^>]*content=["']([^"']+)["']/gi),
       ...sampleHtml.matchAll(/<meta\s+[^>]*content=["']([^"']+)["'][^>]*name=["'](?:twitter:image|twitter:image:src)["']/gi),
@@ -155,7 +219,7 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       if (match[1]) candidateImages.push(match[1]);
     }
 
-    // 3) Link rel="image_src" or link rel="apple-touch-icon"
+    // 3) Link rel="image_src"
     const linkMatches = [
       ...sampleHtml.matchAll(/<link\s+[^>]*rel=["']image_src["'][^>]*href=["']([^"']+)["']/gi),
       ...sampleHtml.matchAll(/<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["']image_src["']/gi),
@@ -185,7 +249,7 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       } catch (_) {}
     }
 
-    // 6) Fallback: Check prominent <img> tags in HTML
+    // 6) Prominent <img> fallback
     if (candidateImages.length === 0) {
       const imgMatches = sampleHtml.matchAll(/<img\s+[^>]*src=["']([^"']+)["'][^>]*>/gi);
       for (const imgMatch of imgMatches) {
@@ -206,7 +270,7 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
       }
     }
 
-    // Resolve the first valid image URL
+    // Resolve first valid image URL
     for (const candidate of candidateImages) {
       const resolved = resolveImageUrl(candidate, trimmedUrl);
       if (resolved) {
@@ -214,9 +278,17 @@ export async function extractUrlMetadataAndImage(rawUrl: string): Promise<Extrac
         break;
       }
     }
+
+    if (isFb) {
+      result.facebookNotice = result.imageUrl || result.title
+        ? 'Facebook content detected.'
+        : 'Facebook provided limited page data. Using the content shared with the app.';
+    }
   } catch (err: any) {
-    // Fault-tolerant: log and continue without image
-    console.warn(`[UrlExtractor] Image extraction skipped for "${trimmedUrl}": ${err?.message || 'Network/Parsing issue'}`);
+    console.warn(`[UrlExtractor] Extraction note for "${trimmedUrl}": ${err?.message || 'Network/Parsing issue'}`);
+    if (isFb) {
+      result.facebookNotice = 'Facebook provided limited page data. Using the content shared with the app.';
+    }
   }
 
   return result;

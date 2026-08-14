@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { isPrivateOrInternalHost } from './urlExtractor.js';
 
 export interface EditImageParams {
   imageUrl: string;
@@ -39,7 +40,20 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
     throw new Error('Invalid or malformed data URI for image');
   }
 
-  // If HTTP / HTTPS URL, fetch with realistic headers
+  // If HTTP / HTTPS URL, validate and fetch with realistic headers
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(trimmed);
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error('Image URL must use http: or https:');
+    }
+    if (isPrivateOrInternalHost(parsedUrl.hostname)) {
+      throw new Error('Access to private or internal network addresses is restricted');
+    }
+  } catch (err: any) {
+    throw new Error(`Invalid image URL: ${err.message}`);
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -59,7 +73,16 @@ async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mim
       throw new Error(`Failed to fetch source image from URL (HTTP ${response.status})`);
     }
 
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > 20 * 1024 * 1024) {
+      throw new Error('Image file exceeds maximum allowable size (20MB)');
+    }
+
     const arrayBuffer = await response.arrayBuffer();
+    if (arrayBuffer.byteLength > 20 * 1024 * 1024) {
+      throw new Error('Image file exceeds maximum allowable size (20MB)');
+    }
+
     const buffer = Buffer.from(arrayBuffer);
     const base64Data = buffer.toString('base64');
 
